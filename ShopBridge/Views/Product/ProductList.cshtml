@@ -1,0 +1,179 @@
+﻿
+@{
+    ViewBag.Title = "ProductList";
+}
+
+<h2>ProductList</h2>
+
+<style>
+    table {
+        font-family: arial, sans-serif;
+        border-collapse: collapse;
+        width: 100%;
+    }
+
+    td, th {
+        border: 1px solid #dddddd;
+        text-align: left;
+        padding: 8px;
+    }
+
+    tr:nth-child(even) {
+        background-color: #dddddd;
+    }
+    .errorClass {
+        border: 1px solid red;
+    }
+</style>
+<div>
+    <input type="button" value="Add Product" id="btnadd"/>
+</div>
+<br />
+<div id="data">
+</div>
+<br />
+<br />
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script>
+    $(document).ready(function () {
+        GetProduct();
+    });
+    function GetProduct() {
+        $.ajax({
+            url: "https://localhost:44303/api/productlist",
+            type: 'GET',
+            dataType: 'json',
+            success: function (data) {
+                if (data!='') {
+                    createTable('LoadProduct',data);
+                }
+            },
+            error: function (data, status, req) {
+                alert(req.responseText + " " + status);
+            }
+        });
+    }
+    function DeleteProduct(event) {
+        var ItemID = event.id;
+        var url = "https://localhost:44303/api/deleteproduct?ItemID=" + ItemID;
+        jQuery.support.cors = true;
+        $.ajax({
+            url: url,
+            type: 'POST',
+            dataType: 'json',
+            success: function (data) {
+                GetProduct();
+            },
+            error: function (data, status, req) {
+                //alert(req.responseText + " " + status);
+            }
+        });
+    }
+    
+    $("body").on("click", ".btncancel", function () {
+        GetProduct();
+    });
+    $("body").on("click", ".btnedit", function () {
+        var instparent = $(this).parents('tr');
+        var id = $(this).parents('td').find(".btndel").attr('id');
+        var description = instparent.find('td:nth-child(2)').text();
+        var quantity = instparent.find('td:nth-child(4)').text()
+        var name = instparent.find('td:nth-child(1)').text();
+        var color = instparent.find('td:nth-child(3)').text();
+        var price = instparent.find('td:nth-child(5)').text()
+        instparent.find('td:nth-child(2)').html("<input type='text' class='txtdesc' value='" + description + "'>");
+        instparent.find('td:nth-child(1)').html("<input type='text' class='txtname' value='" + name + "'>");
+        instparent.find('td:nth-child(3)').html("<input type='text' class='txtcolor' value='" + color + "'>");
+        instparent.find('td:nth-child(4)').html("<input type='text' class='txtquantity' value='" + quantity + "'>");
+        instparent.find('td:nth-child(5)').html("<input type='text' class='txtprice' value='" + price + "'>");
+        instparent.find('td:nth-child(6)').html("<input type='button' value='Save' id=" + id + " class='btnsave'><input type='button' value='Cancel' class='btncancel'>");
+    });
+    $("body").on("click", ".btnsave", function () {
+        var instparent = $(this).parents('tr');
+        var id = $(this).attr('id');
+        var desc = instparent.find('.txtdesc').val();
+        var name = instparent.find('.txtname').val();
+        var color = instparent.find('.txtcolor').val();
+        var quantity = instparent.find('.txtquantity').val();
+        var price = instparent.find('.txtprice').val();
+        if (validateData(name, desc, color, quantity, price, this)) {
+            var data = { "Name": name, "Color": color, "Quantity": quantity, "Description": desc, "Price": price, "ItemID": id }
+            $.ajax({
+                url: 'https://localhost:44303/api/addupdateproduct',
+                type: 'POST',
+                data: data,
+                dataType: 'json',
+                success: function (data) {
+                    GetProduct();
+                },
+                error: function (data, status, req) {
+                    //alert(req.responseText + " " + status);
+                }
+            });
+        }
+    });
+    $("#btnadd").click(function () {
+        var isDataAvailable = $(this).parents('div').find('#data').children('#productdata');
+        if (isDataAvailable.length > 0) {
+            var data = " <tr><td><input type='text' class='txtname text-field'></td><td><input type='text' class='txtdesc text-field'></td><td><input type='text' class='txtcolor text-field'></td><td><input type='text' class='txtquantity text-field'></td><td><input type='text' class='txtprice text-field'></td><td><input type='button' value='Save' class='btnsave'><input type='button' value='Cancel' class='btncancel'></td></tr>";
+            $("#productdata tbody").append(data);
+        }
+        else {
+            createTable('AddProduct','');
+        }
+    })
+    function createTable(action,data) {
+        var innerHtml = "<table id='productdata'><thead><tr><th>Product</th><th>Description</th><th>Color</th><th>Quantity</th><th>Price</th><th>Action</th></tr></thead><tbody>"
+        if (action == 'LoadProduct') {
+            $.each(data, function (index, val) {
+                innerHtml += "<tr><td>" + data[index].Name + "</td>";
+                innerHtml += "<td>" + data[index].Description + "</td>";
+                innerHtml += "<td>" + data[index].Color + "</td>";
+                innerHtml += "<td>" + data[index].Quantity + "</td>";
+                innerHtml += "<td>" + data[index].Price + "</td>";
+                innerHtml += "<td><input type='button' id='btnedit" + data[index].Code + "' class='btnedit' value='Edit'><input type='button' data-myAttribute=" + data[index].ItemID + " class='btndel' id=" + data[index].ItemID + " onClick='DeleteProduct(this)' value='Delete'></td></tr>";
+            })
+        }
+        else if (action ='AddProduct'){
+            innerHtml += "<tr><td><input type='text' class='txtname text-field'></td><td><input type='text' class='txtdesc text-field'></td><td><input type='text' class='txtcolor text-field'></td><td><input type='text' class='txtquantity text-field'></td><td><input type='text' class='txtprice text-field'></td><td><input type='button' value='Save' class='btnsave'><input type='button' value='Cancel' class='btncancel'></td></tr>";
+        }
+        innerHtml += "</tbody></table>";
+
+        $("#data").empty();
+        $("#data").append(innerHtml);
+    }
+    function validateData(name, description, color, quantity, price, inst) {
+        var anyError = false;
+        var instparent = $(inst).parents('tr');
+        instparent.find('input[type=text]').removeClass('errorClass');
+        if (name == null || name.trim() == '') {
+            anyError = true;
+            instparent.find('.txtname').addClass('errorClass');
+        }
+        if (description == null || description.trim() == '') {
+            anyError = true;
+            instparent.find('.txtdesc').addClass('errorClass');
+        }
+        if (color == null || color.trim() == '') {
+            anyError = true;
+            instparent.find('.txtcolor').addClass('errorClass');
+        }
+        if (quantity == null || quantity.trim() == '') {
+            anyError = true;
+            instparent.find('.txtquantity').addClass('errorClass');
+        }
+        if (price == null || price.trim() == '') {
+            anyError = true;
+            instparent.find('.txtprice').addClass('errorClass');
+        }
+
+        if (anyError) {
+            return false;
+        }
+        return true;
+    }
+    $("body").on("focus", ".text-field", function () {
+        $(this).removeClass('errorClass');
+    });
+</script>
