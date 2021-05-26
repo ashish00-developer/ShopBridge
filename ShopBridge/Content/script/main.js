@@ -18,6 +18,7 @@ function GetProduct() {
                 $("#data").empty();
                 $("#data").append(innerHtml);
             }
+            document.cookie = JSON.stringify(data);
         },
         error: function (data, status, req) {
             alert(req.responseText + " " + status);
@@ -78,6 +79,28 @@ $("body").on("click", ".btnedit", function () {
         }
     });
 });
+
+//calling the api on edit button click
+$("body").on("click", "#btnsearch", function () {
+    var searchvalue = $(".txtsearch").val().toLowerCase();
+    var data = JSON.parse(document.cookie);
+    var innerHtml = "<input type='button' value='Add Product' id='btnadd' /><br/><table id='productdata'><thead><tr><th>Product</th><th>Description</th><th>Color</th><th>Quantity</th><th>Price</th><th>Action</th></tr></thead><tbody>";
+    $.each(data, function (index, val) {
+        if (data[index].Name.toLowerCase().includes(searchvalue)) {
+            innerHtml += "<tr><td>" + data[index].Name + "</td>";
+            innerHtml += "<td>" + data[index].Description + "</td>";
+            innerHtml += "<td>" + data[index].Color + "</td>";
+            innerHtml += "<td>" + data[index].Quantity + "</td>";
+            innerHtml += "<td>" + data[index].Price + "</td>";
+            innerHtml += "<td><input type='button' class='btnedit' value='Edit'><input type='button' class='btndel' id=" + data[index].ItemID + " onClick='DeleteProduct(this)' value='Delete'></td></tr>";
+        }
+    });
+    innerHtml += "</tbody></table>";
+    console.log(innerHtml);
+    $("#data").empty();
+    $("#data").append(innerHtml);
+});
+
 
 //calling the api on save button click
 $("body").on("click", ".btnsave", function () {
@@ -145,6 +168,7 @@ function createTable(action, data) {
 function addRow() {
     return "<tr><td><input type='text' class='txtname text-field'></td><td><input type='text' class='txtdesc text-field'></td><td><input type='text' class='txtcolor text-field'></td><td><input type='text' class='txtquantity text-field'></td><td><input type='text' class='txtprice text-field'></td><td><input type='button' value='Save' class='btnsave'><input type='button' value='Cancel' class='btncancel'></td></tr>";
 }
+
 
 function validateData(name, description, color, quantity, price, inst) {
     var anyError = false;
